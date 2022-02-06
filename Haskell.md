@@ -470,3 +470,111 @@
 <br><br>
 
 
+# 재귀
+
+## 재귀함수
+- 재귀는 함수의 정의 안에 적용되는 함수를 정의하는 방법이다.
+- 이러한 재귀 함수는 자기 자신을 호출한다.
+- 재귀적으로 정의된 함수의 전략은 어떤 문제를 동일한 종류의 더 작은 문제로 나누고 그 작은 문제를 해결하는 것이다.
+- 함수형 언어에서는 `어떻게` 계산할지를 지정하는 것이 아니라, 그것이 `무엇인지`를 선언해 계산을 수행하므로 재귀는 중요하다.
+<br><br>
+
+
+## Maximum
+- `maximum` 함수는 순서(`Ord` 타입 클래스의 인스턴스)를 둘 수 있는 리스트를 받아서 가장 큰 값을 반환한다.
+- 결과 ->
+    ```haskell
+    maximum' :: (Ord a) => [a] -> a
+    maximum' [] = error "maximum of empty list!"
+    maximum' [x] = x
+    maximum' (x:xs) = max x (maximum' xs)
+    ```
+<br><br>
+
+
+## 몇 가지 재귀함수들
+- 이미 하스켈에 존재하는 함수들이지만, 재귀를 설계하는 감각을 익히기 위해 직접 구현을 해봐야 한다.
+
+### replicate
+- `Int` 값와 항목의 값을 받아서 해당 항목을 몇 번 반복한 리스트를 반환하는 함수이다.
+- 결과 ->
+    ```haskell
+    replicate' :: Int -> a -> [a]
+    replicate' n x
+        | n <= 0    = []
+        | otherwise = x : replicate' (n - 1) x
+    ```
+
+### take
+- `Int` 값과 리스트를 받아 리스트에서 지정된 개수의 요소를 반환하는 함수이다.
+- 결과 ->
+    ```haskell
+    take' :: Int -> [a] -> [a]
+    take' n _
+        | n <= 0   = []
+    take' _ []     = []
+    take' n (x:xs) = x : take' (n - 1) xs
+    ```
+
+### reverse
+- 리스트를 받아서 요소들의 순서가 역순으로 구성된 리스트를 반환하는 함수이다.
+- 결과 ->
+    ```haskell
+    reverse' :: [a] -> [a]
+    reverse' [] = []
+    reverse' (x:xs) = reverse' xs ++ [x]
+    ```
+
+### repeat
+- 요소를 받아서 그 요소로 구성된 무한 리스트를 반환하는 함수이다.
+- 결과 ->
+    ```haskell
+    repeat' :: a -> [a]
+    repeat' x = x : repeat' x
+    ```
+
+### zip
+- 리스트 두 개를 받아서 페어로 결합한 리스트를 반환하는 함수이다.
+- 결과 ->
+    ```haskell
+    zip' :: [a] -> [b] -> [(a, b)]
+    zip' _ [] = []
+    zip' [] _ = []
+    zip' (x:xs) (y:ys) = (x, y) : zip' xs ys
+    ```
+
+### elem
+- 동등 비교가 가능한 값(`Eq` 타입 클래스의 인스턴스)과 리스트를 받아서 그 값이 리스트의 멤버인지를 검사하는 함수이다.
+- 결과 -> 
+    ```haskell
+    elem' :: (Eq a) => a -> [a] -> Bool
+    elem' a [] = False
+    elem' a (x:xs)
+        | a == x    = True
+        | otherwise = a `elem'` xs 
+    ```
+<br><br>
+
+
+## 정렬
+- 순서가 있는 요소를 가진 리스트를 정렬하는 문제는 보통 재귀적인 해결책을 갖는다.
+- 정렬 알고리즘 중에서 `퀵소트`(quicksort)를 이용한 정렬 함수를 구현해 볼 것이다.
+- 결과 -> 
+    ```haskell
+    quicksort :: (Ord a) => [a] -> [a]
+    quicksort [] = []
+    quicksort (x:xs) =
+        let smallerOrEqual = [a | a <- xs, a <= x]
+            larger = [a | a <- xs, a > x]
+        in quicksort smallerOrEqual ++ [x] ++ quicksort larger
+    ```
+<br><br>
+
+
+## 재귀적으로 생각하기
+- 재귀를 설계할 때에는 가장 평범한 입력이 들어올 때의 간단하고 재귀적이지 않은 베이스 케이스를 정의하면서 시작해야 한다.
+- 그런 다음 문제를 하나 이상의 작은 문제로 나누고 동일한 함수를 적용해 재귀적으로 그 문제들을 해결한다.
+- 마지막으로 해결된 작은 문제들로 최종 해결책을 만든다.
+<br><br>
+
+
