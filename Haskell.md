@@ -5,11 +5,14 @@
     - 하스켈 스크립트(`.hs` 확장자를 가진 스크립트) 컴파일 가능
     - 인터랙티브 모드(`GHCi`)도 제공 (`ghci` 명령어를 통해 실행)
 - 하스켈 플랫폼 다운로드 : https://www.haskell.org/downloads/
+- 하스켈 함수들을 검색하려면 후글(Hoogle)을 이용하면 된다.
+    - URL : http://www.haskell.org/hoogle
 
 ### GHCi 프로그램의 명령어
-- `:t ${expression}` : 표현식의 타입을 확인
+- `:t ${expression}` : 표현식의 타입을 확인 (type)
 - `:l ${haskell script}` : 하스켈 스크립트 불러오기 (load)
 - `:r` : 하스켈 스크립트 다시 불러오기 (reload)
+- `:m + ${module name 1} ${module name 2} ...` : 여러 모듈들에 대해 접근 (module)
 - `:q` : GHCi 프로그램 종료 (quit)
 - `:! ${cmd}` : shell에서 cmd 명령어 실행
 - `:set prompt "${prompt format}"` : GHCi 프로그램의 프롬프트 형식 변경
@@ -847,4 +850,40 @@
     - 권장되는 스타일은 중간 결과에 표식을 주기 위해 `let` 바인딩을 사용하는 방법이나, 문제를 작은 문제로 분리하는 방법이다.
 <br><br>
 
+
+# 모듈
+
+## 하스켈 모듈
+- 하스켈 `모듈`(module)은 기본적으로 함수, 타입, 타입 클래스를 정의한 파일이며, 하스켈 `프로그램`은 모듈들의 집합이다.
+- 모듈은 많은 기능들과 그 내부에 정의된 타입들을 가질 수 있으며 그들 중 몇몇을 `익스포트`(export)한다.
+- 우리가 지금까지 다뤘던 모든 함수와 타입, 타입 클래스는 `Prelude` 모듈의 일부이며 기본으로 임포트된다.
+<br><br>
+
+
+## 모듈 임포트하기
+- 하스켈 스크립트에서 모듈을 임포트하는 구문은 `import ${module name}`이다.
+- 모듈을 임포트하는 구문은 반드시 함수를 정의하는 것보다 먼저 선언되어야 한다.
+- 유용한 모듈 중의 하나는 리스트 작업을 위해 많은 양의 함수들을 가지고 있는 `Data.List` 모듈이다.
+    - ex) 리스트의 중복을 제거한 요소들의 개수를 반환하는 `numUniques` 함수 정의 ->
+        ```haskell
+        import Data.List
+
+        numUniques :: (Eq a) => [a] -> Int
+        numUniques = length . nub
+        ```
+    - `Data.List` 모듈을 임포트하면 `Data.List`가 내보내는 모든 함수들을 사용할 수 있다.
+    - `nub` 함수는 `Data.List` 모듈의 함수들 중 하나로 리스트를 받아서 중복 요소들을 제거한다.
+- 특정 모듈의 몇몇 함수들만 필요할 경우에는 선택적으로 임포트할 수도 있다.
+    - ex) `import Data.List (nub, sort)`
+- 특정 모듈의 몇몇 함수들만 제외하고 다른 모든 함수들을 임포트할 수도 있다.
+    - ex) `import Data.List hiding (nub)`
+- `퀄러파이드 임포트`(qualified import)를 통해 이름이 충돌하는 것을 처리할 수 있다.
+    - ex) `import qualified Data.Map`
+    - 퀄러파이드 임포트를 사용하면 함수를 참조할 때 모듈 이름을 다 명시해야 한다.
+        - ex) `Data.Map.filter`
+    - 퀄러파이드 임포트를 사용할 때 단축 이름을 지정할 수도 있다.
+        - ex) `import qualified Data.Map as M`
+
+
+## 모듈 함수로 문제 해결하기
 
