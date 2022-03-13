@@ -883,7 +883,119 @@
         - ex) `Data.Map.filter`
     - 퀄러파이드 임포트를 사용할 때 단축 이름을 지정할 수도 있다.
         - ex) `import qualified Data.Map as M`
+<br><br>
 
 
 ## 모듈 함수로 문제 해결하기
+- 표준 라이브러리에 있는 모듈은 하스켈 코딩을 쉽게 해주는 많은 함수들을 제공한다.
 
+### 단어 카운팅
+- 문제 : 엄청난 양의 단어들을 포함한 문자열에서 각각의 단어들이 몇 번 나왔는지 알고 싶다.
+- 사용할 모듈의 함수들
+    - `Data.List` 모듈의 `word` 함수 : 문자열을 단어 문자열의 리스트로 변환한다.
+        - ex) `words "hello my friend" == ["hello", "my", "friend"]`
+    - `Data.List` 모듈의 `group` 함수 : 리스트를 받아서 인접한 요소들이 동일하다면 하위 리스트로 그룹화한다.
+        - ex) `group [1, 1, 2, 3, 3, 3, 2, 2, 5] == [[1, 1], [2], [3, 3, 3], [2, 2], [5]]`
+    - `Data.List` 모듈의 `sort` 함수 : 순서를 매길 수 있는 것들로 구성된 리스트를 받아서 정렬된 새로운 리스트를 반환한다.
+        - ex) `sort [5, 4, 3, 7, 2, 1] == [1, 2, 3, 4, 5, 7]`
+- 결과 ->
+    ```haskell
+    import Data.List
+
+    wordNums :: String -> [(String, Int)]
+    wordNums = map (\ws -> (head ws, length ws)) . group . sort . words
+    ```
+
+### 건초 더미에서 바늘 찾기
+- 문제 : 두 개의 리스트에서 첫 번째 리스트의 전체가 두 번째 리스트의 어느 부분으로 포함되어 있는지 알고 싶다.
+    - 이미 `Data.List` 모듈에 있는 `isInfixOf` 함수를 통해 문제를 해결할 수도 있다.
+- 우리는 검색될 리스트를 `건조 더미`(haystack)라고 하고, 검색할 리스트를 `바늘`(needle)이라고 할 것이다.
+- 사용할 모듈의 함수들
+    - `Data.List` 모듈의 `tails` 함수 : 리스트를 받아서 그 리스트에 `tail` 함수를 연속적으로 적용한 결과를 반환한다.
+        - `tails [1, 2, 3] == [[1, 2, 3], [2, 3], [3], []]`
+    - `Data.List` 모듈의 `isPrefixOf` 함수 : 두 개의 리스트를 받아서 두 번째 리스트가 첫 번째 리스트로 시작하는지 알려준다.
+        - ``"haha" `isPrefixOf` "ha" == False``
+    - `Data.List` 모듈의 `any` 함수 : 조건식과 리스트를 받아서 리스트의 특정 요소가 조건에 만족하는지 알려준다.
+        - `any (> 4) [1, 2, 3] == False`
+- 결과 ->
+    ```haskell
+    import Data.List
+
+    isIn :: (Eq a) => [a] -> [a] -> Bool
+    needle `isIn` haystack = any (needle `isPrefixOf`) (tails haystack)
+    ```
+
+### 시저 암호
+- 문제 : `시저 암호`(Caesar cipher)를 이용해 메시지를 암복호화 하고 싶다.
+- 시저 암호는 알파벳의 고정된 위치만큼 각각의 문자를 이동하여 메시지를 인코딩하는 원시적인 방법이다.
+- 사용할 모듈의 함수들
+    - `Data.Char` 모듈의 `ord` 함수 : 문자를 그에 해당하는 숫자로 변환한다.
+        - ex) `ord 'a' == 97`
+    - `Data.Char` 모듈의 `chr` 함수 : 숫자를 그에 해당하는 문자로 변환한다.
+        - ex) `chr 97 == 'a'`
+- 결과 -> 
+    ```haskell
+    import Data.Char
+
+    encode :: Int -> String -> String
+    encode offset msg = map (\c -> chr $ ord c + offset) msg
+
+    decode :: Int -> String -> String
+    decode shift msg = encode (negate shift) msg
+    ```
+
+### 엄격한 레프트 폴드
+- `foldl` 함수를 이용하는 것은 종종 스택 오버플로우 에러를 발생하기도 한다.
+    - 하스켈은 느긋하기 때문에 실제로 값을 계산하는 것을 가능한 미루게 되고, 연기된 모든 계산은 메모리에 저장되기 때문이다.
+    - ex) `foldl (+) 0 (replicate 100000000 1)`
+- ex) `foldl` 함수를 이용한 `foldl (+) 0 [1, 2, 3]` 표현식의 계산법 ->
+    ```haskell
+    foldl (+) 0 [1, 2, 3] = 
+    foldl (+) (0 + 1) [2, 3] = 
+    foldl (+) ((0 + 1) + 2) [3] = 
+    foldl (+) (((0 + 1) + 2) + 3) [] = 
+    ((0 + 1) + 2) + 3 =
+    (1 + 2) + 3 =
+    3 + 3 =
+    6
+    ```
+    - 표현식에서 먼저 미뤄둔 계산의 커다란 스택을 만든 후, 빈 리스트에 도달하면 미뤄둔 계산을 실제로 수행하게 된다.
+- `Data.List` 모듈의 `foldl'` 함수는 계산을 미루지 않아 스택 오버플로우 에러를 방지할 수 있다.
+    - ex) `foldl'` 함수를 이용한 `foldl' (+) 0 [1, 2, 3]` 표현식의 계산법 -> 
+        ```haskell
+        foldl' (+) 0 [1, 2, 3] = 
+        foldl' (+) 1 [2, 3] = 
+        foldl' (+) 3 [3] = 
+        foldl' (+) 6 [] = 
+        6
+        ```
+    - `foldl1` 함수의 엄격한 버전인 `foldl1'` 함수도 존재한다.
+
+### 숫자 찾기
+- 문제 : 어떤 자연수를 구성하는 숫자들의 합이 특정 자연수가 되는 최초의 자연수를 알고 싶다.
+- 사용할 모듈의 함수들
+    - `Data.Char` 모듈의 `digitToInt` 함수 : 문자를 받아서 숫자로 변환한다.
+        - 이 함수는 '0'에서 '9'까지, 그리고 'A'에서 'F'까지(소문자 포함) 범위에 있는 문자들에서만 동작한다.
+        - ex) `digitToInt '2' == 2`
+    - `Data.List` 모듈의 `find` 함수 : 조건식과 리스트를 받아서 리스트에서 조건에 맞는 첫 번째 항목을 반환한다.
+        - 타입 서명 : `find :: (a -> Bool) -> [a] -> Maybe a`
+            - 여기서 `Maybe` 타입의 값은 하나도 없거나 단 하나의 요소만 가질 수 있다.
+            - 가능한 실패를 나타내고자 할 때 `Maybe` 타입을 사용하며 `Nothing`과 `Just`로 구분된다.
+                - 아무것도 갖지 않는 값을 만들기 위해서는 그냥 `Nothing`을 사용한다.
+                - 특정 값을 담고 있는 값을 만들기 위해서는 `Just`를 사용한다.
+        - ex) `find (> 4) [3, 4, 5, 6, 7] == Just 5`
+- 결과 ->
+    ```haskell
+    import Data.Char
+    import Data.List
+
+    digitSum :: Int -> Int
+    digitSum = sum . map digitToInt . show
+
+    firstTo :: Int -> Maybe Int
+    firstTo n = find (\x -> digitSum x == n) [1..]
+    ```
+<br><br>
+
+
+## 값에 키 매핑하기
