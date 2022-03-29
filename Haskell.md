@@ -236,7 +236,7 @@
 - 타입 클래스(type class)는 어떤 동작을 정의하는 인터페이스이다.
 - 특정 타입이 타입 클래스의 인스턴스라면 그것은 타입 클래스가 기술한 동작을 지원하며 구현된다.
     - ex) 항등 연산자(`==`)를 정의하는 타입 클래스 `Eq`
-        - 타입 서명 :  `(==) :: (Eq a) => a -> a -> Bool`
+        - 타입 서명 : `(==) :: (Eq a) => a -> a -> Bool`
 - 타입 서명에서 `=>` 키워드는 `클래스 제약`(class constraint)을 명시해준다.
 
 ### Eq 타입 클래스
@@ -999,3 +999,67 @@
 
 
 ## 값에 키 매핑하기
+- 어떤 종류의 컬렉션에서 데이터를 다룰 경우 어떤 식으로 정렬되어 있는지는 상관하지 않곤 한다.
+- 그저 특정 키로 원하는 데이터를 접근할 수 있기만을 원할 때가 있다.
+
+### 어소시에이션 리스트
+- 딕셔너리(dictionary)라고도 불리는 어소시에이션 리스트는 순서와는 상관없이 키/값을 저장하는데 사용되는 리스트이다.
+- 하스켈에서 어소시에이션 리스트를 나타내는 가장 확실한 방법은 페어(pair)의 리스트를 갖는 것이다.
+    - 페어의 첫 번째 요소는 키로, 두 번째 요소는 값으로 구성하면 된다.
+- ex) 페어를 이용한 어소시에이션 리스트 생성 ->
+    ```haskell
+    phoneBook = 
+        [ ("betty", "555-2938")
+        , ("bonnie", "452-2928")
+        , ("penny", "853-2492")
+        ]
+    ```
+- 어소시에시션 리스트를 사용할 때 가장 일반적인 작업은 키로 어떤 값을 찾는 것이다.
+    - ex) 어소시에이션 리스트에서 주어진 키로 값을 찾는 `find` 함수 정의 ->
+        ```haskell
+        find :: (Eq k) => k -> [(k, v)] -> Maybe v
+        find key [] = Nothing
+        find key ((k, v):xs)
+            | key == k = Just v
+            | otherwise = find key xs
+
+        find' :: (Eq k) => k -> [(k, v)] -> Maybe v
+        find' key xs = foldr (\(k, v) acc -> if key == k then Just v else acc) Nothing
+        ```
+    - 어소시에이션 리스트에 찾고자 하는 값이 없을 수도 있으므로 에러가 나는 것을 방지하기 위해 `Maybe` 타입을 사용한다.
+
+### Data.Map 입력
+- `Data.List` 모듈의 `lookup` 함수를 구현하고 어떤 키에 해당하는 값을 원한다면 그것을 찾을 때까지 리스트에 있는 모든 항목을 훑어봐야 한다.
+- `Data.Map` 모듈은 훨씬 빠른 어소시에이션 리스트를 제공하며 유용한 함수들을 많이 제공한다.
+- `Data.Map` 모듈은 `Prelude`와 `Data.List` 모듈과 충돌하는 함수가 존재하기 때문에 퀄러파이드 임포트를 사용한다.
+    - ex) `import qualified Data.Map as Map`
+- `Data.Map` 모듈의 `fromList` 함수 : 어소시에이션 리스트를 맵으로 바꿔준다.
+    - 원본 어소시에이션 리스트에 동일한 키가 존재한다면 최종 페어만 남겨지고 이전 페어들은 모두 버려진다.
+    - 타입 서명 : `Map.fromList :: (Ord k) => [(k, v)] -> Map.Map k v`
+        - 키를 의미하는 타입 `k`는 순서를 매길 수 있도록 `Ord` 타입의 인스턴스이다.
+        - 키가 `Ord` 타입의 인스턴스인 것은 `Data.Map` 모듈에서의 필수적인 제약조건이며 효과적으로 키를 배치하고 접근할 수 있게 된다.
+    - ex) `Map.fromList [(1, 'a'), (2, 'b'), (1, 'c')] == Map.fromList [(1, 'c'), (2, 'b')]`
+- `Data.Map` 모듈의 `lookup` 함수 : 키와 맵을 받아서 키에 해당하는 값을 맵에서 찾아 반환한다.
+    - 값을 성공적으로 찾았다면 `Just`로 래핑된 값을 반환하고 찾지 못했다면 `Noting`을 반환한다.
+    - 타입 서명 : `Map.lookup :: (Ord k) => k -> Map.Map k a -> Maybe a`
+    - ex) `Map.lookup 1 (Map.fromList [(1, 'c'), (2, 'b')]) == Just 'c'`
+- `Data.Map` 모듈의 `insert` 함수 : 키와 값과 맵을 받아서 그 키와 값이 삽입된 새로운 맵을 반환한다.
+    - 타입 서명 : `Map.insert :: (Ord k) => k -> a -> Map.Map k a -> Map.Map k a`
+    - ex) `Map.insert 1 'a' (Map.fromList []) == Map.fromList [(1, 'a')]`
+- `Data.Map` 모듈의 `size` 함수 : 맵을 받아서 그 크기를 반환한다.
+    - 타입 서명 : `Map.size :: Map.Map k a -> Int`
+    - ex) `Map.size (Map.fromList [(1, 'a')]) == 1`
+- `Data.Map` 모듈의 `map` 함수 : 함수와 맵을 받아서 그 맵에 있는 각각의 값에 함수를 적용한다.
+    - 타입 서명 : `Map.map :: (a -> b) -> Map.Map k a -> Map.Map k b`
+    - ex) `Map.map (+ 1) (Map.fromList [(1, 1), (2, 2)]) == Map.fromList [(1, 2), (2, 3)]`
+- `Data.Map` 모듈의 `fromListWith` 함수 : `fromList` 함수처럼 동작하지만 중복된 키를 버리지 않고 제공된 함수를 통해 해결한다.
+    - 타입 서명 : `Map.fromListWith :: (Ord k) => (a -> a -> a) -> [(k, a)] -> Map.Map k a`
+    - ex) 중복된 키에 대해 리스트로 값을 합쳐주는 `mapWithList` 함수 정의 -> 
+        ```haskell
+        mapWithList :: (Ord k) => [(k, a)] -> Map.Map k [a]
+        mapWithList xs = Map.fromListWith (++) $ map (\(k, v) -> (k, [v])) xs
+        ```
+<br><br>
+
+
+## 모듈 만들기
