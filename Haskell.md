@@ -912,11 +912,11 @@
 - 우리는 검색될 리스트를 `건조 더미`(haystack)라고 하고, 검색할 리스트를 `바늘`(needle)이라고 할 것이다.
 - 사용할 모듈의 함수들
     - `Data.List` 모듈의 `tails` 함수 : 리스트를 받아서 그 리스트에 `tail` 함수를 연속적으로 적용한 결과를 반환한다.
-        - `tails [1, 2, 3] == [[1, 2, 3], [2, 3], [3], []]`
+        - ex) `tails [1, 2, 3] == [[1, 2, 3], [2, 3], [3], []]`
     - `Data.List` 모듈의 `isPrefixOf` 함수 : 두 개의 리스트를 받아서 두 번째 리스트가 첫 번째 리스트로 시작하는지 알려준다.
-        - ``"haha" `isPrefixOf` "ha" == False``
+        - ex) ``"haha" `isPrefixOf` "ha" == False``
     - `Data.List` 모듈의 `any` 함수 : 조건식과 리스트를 받아서 리스트의 특정 요소가 조건에 만족하는지 알려준다.
-        - `any (> 4) [1, 2, 3] == False`
+        - ex) `any (> 4) [1, 2, 3] == False`
 - 결과 ->
     ```haskell
     import Data.List
@@ -1063,3 +1063,109 @@
 
 
 ## 모듈 만들기
+- 모듈 안에는 함수나 타입들이 구성되어 있으며 모듈이 함수들을 `익스포트`(export)한다고 말한다.
+- 따라서 어떤 모듈을 임포트하면 모듈이 익스포트하는 함수들을 사용할 수 있다.
+- 일반적으로 모듈을 만들 때는 모듈에 인터페이스처럼 작용하는 함수들만 익스포트해서 구현부가 숨겨진다.
+- 따라서 모듈의 새로운 버전에서는 기존의 내부 함수들을 완전히 바꾸거나 삭제할 수도 있게 된다.
+
+### Geometry 모듈
+- 기하학적 물체의 부피와 면적을 계산하기 위한 함수들을 제공하는 작은 모듈을 구성해볼 것이다.
+- 모듈은 시작 부분에 모듈명을 지정하고 익스포트될 함수들을 지정한 다음에 함수들을 추가할 수 있다.
+- ex) `Geometry` 모듈의 시작 부분 정의 -> 
+    ```haskell
+    module Geometry
+    ( sphereVolume
+    , sphereArea
+    , cubeVolume
+    , cubeArea
+    , cuboidVolume
+    , cuboidArea
+    ) where
+    ```
+    - 구(sphere)와 정육면체(cube), 그리고 직육면체(cuboid)에 대한 면적과 부피를 구할 함수들을 지정했다.
+- 모듈의 시작 부분을 지정한 다음에는 함수들을 정의하면 된다.
+- ex) `Geometry` 모듈의 함수들 정의 ->
+    ```haskell
+    sphereVolume :: Float -> Float
+    sphereVolume radius = (4.0 / 3.0) * pi * (radius ^ 3)
+
+    sphereArea :: Float -> Float
+    sphereArea radius = 4 * pi * (radius ^ 2)
+
+    cubeVolume :: Float -> Float
+    cubeVolume side = cuboidVolume side side side
+
+    cubeArea :: Float -> Float
+    cubeArea side = cuboidArea side side side
+
+    cuboidVolume :: Float -> Float -> Float -> Float
+    cuboidVolume a b c = rectArea a b * c
+
+    cuboidArea :: Float -> Float -> Float -> Float
+    cuboidArea a b c = rectArea a b * 2 + rectArea b c * 2 + rectArea c a * 2
+
+    rectArea :: Float -> Float -> Float
+    rectArea a b = a * b
+    ```
+    - 정육면체는 직육면체의 특별한 경우이므로 직육면체의 모든 변의 길이가 같다고 취급하여 그 면적과 부피를 정의한다.
+    - 변의 길이를 기반으로 사각형의 면적을 계산하는 `rectArea` 라는 헬퍼 함수는 모듈 내부적으로만 사용하는 함수로 익스포트하지 않았다.
+- 새로 정의한 모듈을 사용하기 위해서는 기존에 모듈들을 사용하던 것처럼 임포트하면 된다.
+    - ex) `import Geometry`
+    - 모듈을 정의한 `Geometry.hs` 파일은 임포트하는 모듈과 동일한 폴더에 있어야 한다.
+
+### 계층적인 모듈
+- 각각의 모듈은 수많은 하위 모듈들을 가질 수 있으며, 그것들 역시 하위 모듈들을 가질 수 있다.
+- 기존에 정의한 `Geometry` 모듈의 기하학 함수들을 분해하여 세 개의 하위 모듈들을 가지고 있으며 `Geometry`가 타입인 모듈을 구성해볼 것이다.
+- 먼저 `Geometry` 라는 이름의 폴더를 만들고, 그 안에 세 개의 파일들(`Sphere.hs`, `Cuboid.hs`, `Cube.hs`)을 위치한다.
+- `Geometry` 폴더의 `Sphere.hs` 파일 정의 ->
+    ```haskell
+    module Geometry.Sphere
+    ( volume
+    , area
+    ) where
+
+    volume :: Float -> Float
+    volume radius = (4.0 / 3.0) * pi * (radius ^ 3)
+
+    area :: Float -> Float
+    area radius = 4 * pi * (radius ^ 2)
+    ```
+- `Geometry` 폴더의 `Cuboid.hs` 파일 정의 ->
+    ```haskell
+    module Geometry.Cuboid
+    ( volume
+    , area
+    ) where
+
+    volume :: Float -> Float -> Float -> Float
+    volume a b c = rectArea a b * c
+
+    area :: Float -> Float -> Float -> Float
+    area a b c = rectArea a b * 2 + rectArea b c * 2 + rectArea c a * 2
+
+    rectArea :: Float -> Float -> Float
+    rectArea a b = a * b
+    ```
+- `Geometry` 폴더의 `Cube.hs` 파일 정의 ->
+    ```haskell
+    module Geometry.Cube
+    ( volume
+    , area
+    ) where
+
+    import qualified Geometry.Cuboid as Cuboid
+
+    volume :: Float -> Float
+    volume side = Cuboid.volume side side side
+
+    area :: Float -> Float
+    area side = Cuboid.area side side side
+    ```
+- 세 개의 하위 모듈들은 모두 독립된 모듈이기 때문에 동일한 이름으로 함수들을 정의할 수 있다.
+- 각각의 모듈은 임포트 구문을 통해 익스포트한 함수들을 사용할 수 있다.
+    - ex) `import Geometry.Sphere`
+    - 두 개 이상의 모듈들을 임포트하고 싶다면 동일한 이름의 함수들이 존재하므로 퀄러파이드 임포트를 사용해야 한다.
+<br><br>
+
+
+# 타입과 타입 클래스 만들기
